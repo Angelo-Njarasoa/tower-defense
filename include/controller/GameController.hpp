@@ -12,22 +12,9 @@ class Game;
 class GameView;
 class WaveController;
 
-// ============================================================
-//  GameController
-//
-//  MVC role: bridges the Model (Game) and the View (GameView).
-//  - Reads keyboard/mouse input
-//  - Updates the Model
-//  - Asks the View to redraw
-//
-//  Implements ISubject to broadcast game events
-//  to all observers (GameView, SoundManager, ScoreManager...)
-// ============================================================
 class GameController : public ISubject {
 public:
-    // ----------------------------------------------------------
     //  Construction / Destruction
-    // ----------------------------------------------------------
 
     /**
      * @brief Main constructor
@@ -45,9 +32,7 @@ public:
     GameController(const GameController&)            = delete;
     GameController& operator=(const GameController&) = delete;
 
-    // ----------------------------------------------------------
     //  Main loop
-    // ----------------------------------------------------------
 
     /**
      * @brief Processes an SFML event (keyboard, mouse, window close...)
@@ -72,16 +57,13 @@ public:
      */
     bool isRunning() const;
 
-    // ----------------------------------------------------------
     //  Observer Pattern — ISubject
-    // ----------------------------------------------------------
+
     void subscribe(std::shared_ptr<IObserver> observer) override;
     void unsubscribe(std::shared_ptr<IObserver> observer) override;
     void notifyObservers(GameEvent event, int value = 0) override;
 
-    // ----------------------------------------------------------
     //  Player actions — called from handleEvent()
-    // ----------------------------------------------------------
 
     /**
      * @brief Attempts to place a tower on the clicked cell
@@ -119,28 +101,21 @@ public:
     void onQuit();
 
 private:
-    // ----------------------------------------------------------
+    
     //  References to the other MVC layers
-    // ----------------------------------------------------------
     sf::RenderWindow&          m_window;
     std::shared_ptr<Game>      m_game;      ///< Model (data)
     std::shared_ptr<GameView>  m_gameView;  ///< View (rendering)
 
-    // ----------------------------------------------------------
     //  Dedicated wave sub-controller
-    // ----------------------------------------------------------
     std::unique_ptr<WaveController> m_waveController;
 
-    // ----------------------------------------------------------
     //  Internal controller state
-    // ----------------------------------------------------------
     TowerType m_selectedTowerType = TowerType::ARCHER; ///< Active tower in the palette
     bool      m_isPaused          = false;             ///< Is the game paused?
     bool      m_isRunning         = true;              ///< Is the session active?
 
-    // ----------------------------------------------------------
     //  Private helper methods
-    // ----------------------------------------------------------
 
     /**
      * @brief Converts a pixel position to grid coordinates

@@ -1,17 +1,9 @@
 #include "../../include/controller/WaveController.hpp"
 
-// These includes will be available once the Model classes are implemented
-// #include "../../include/model/Game.hpp"
-// #include "../../include/model/Wave.hpp"
-// #include "../../include/model/Enemy.hpp"
-
 #include <iostream>
 #include <stdexcept>
 
-// ============================================================
 //  Construction
-// ============================================================
-
 WaveController::WaveController(std::shared_ptr<Game> game,
                                int                   totalWaves,
                                float                 prepTime,
@@ -26,15 +18,12 @@ WaveController::WaveController(std::shared_ptr<Game> game,
         throw std::invalid_argument("WaveController: totalWaves must be > 0");
 }
 
-// ============================================================
 //  Update loop
-// ============================================================
-
 void WaveController::update(float deltaTime)
 {
     if (m_allCleared) return;
 
-    // ---- Preparation phase (between waves) ----
+    // Preparation phase (between waves)
     if (!m_waveInProgress)
     {
         m_prepTimer -= deltaTime;
@@ -45,7 +34,7 @@ void WaveController::update(float deltaTime)
         return;
     }
 
-    // ---- Spawn phase ----
+    // Spawn phase
     if (m_enemiesToSpawn > 0)
     {
         m_spawnTimer += deltaTime;
@@ -57,10 +46,7 @@ void WaveController::update(float deltaTime)
         }
     }
 
-    // ---- Update active enemies ----
-    // m_game->getCurrentWave()->update(deltaTime);
-
-    // ---- Wave cleared? ----
+    // Update active enemies
     if (m_enemiesToSpawn == 0 && isCurrentWaveCleared())
     {
         m_waveInProgress = false;
@@ -81,27 +67,19 @@ void WaveController::update(float deltaTime)
     }
 }
 
-// ============================================================
 //  Manual control
-// ============================================================
-
 void WaveController::forceStartNextWave()
 {
     if (!m_waveInProgress && !m_allCleared)
     {
         m_prepTimer = 0.f;
-        // The next call to update() will trigger startWave()
     }
 }
 
-// ============================================================
 //  Accessors
-// ============================================================
-
 int WaveController::getCurrentWaveNumber() const
 {
-    return m_currentWaveIndex + 1;  // 1-based display
-}
+    return m_currentWaveIndex + 1;  
 
 int WaveController::getTotalWaves() const
 {
@@ -123,10 +101,7 @@ bool WaveController::allWavesCleared() const
     return m_allCleared;
 }
 
-// ============================================================
 //  Private methods
-// ============================================================
-
 void WaveController::startWave(int waveIndex)
 {
     m_waveInProgress = true;
@@ -137,7 +112,7 @@ void WaveController::startWave(int waveIndex)
     // Decrease spawn interval as waves progress (increasing difficulty)
     m_spawnInterval = std::max(0.3f, 1.0f - waveIndex * 0.05f);
 
-    // Callback: announce the start of the wave (1-based number)
+    // Callback: announce the start of the wave
     m_eventCallback(GameEvent::WAVE_STARTED, waveIndex + 1);
 
     std::cout << "[WaveController] Wave " << (waveIndex + 1)
@@ -155,8 +130,7 @@ void WaveController::spawnNextEnemy()
     auto enemy = EnemyFactory::create(type, m_currentWaveIndex + 1);
 
     if (enemy)
-    {
-        // m_game->addEnemy(std::move(enemy));
+    {        
         --m_enemiesToSpawn;
         ++m_spawnedCount;
     }
@@ -164,20 +138,11 @@ void WaveController::spawnNextEnemy()
 
 bool WaveController::isCurrentWaveCleared() const
 {
-    // Wave is cleared when no enemies remain active on the map
-    // return m_game->getActiveEnemies().empty();
-
-    // Temporary stub
     return false;
 }
 
 EnemyType WaveController::selectEnemyType(int waveIndex, int spawnIndex) const
 {
-    // Wave composition logic:
-    //  - Waves 0-2 : Goblins only
-    //  - Waves 3-6 : Goblins + Trolls (1 Troll every 3 spawns)
-    //  - Waves 7+  : Goblins + Trolls + 1 Boss at the end of the wave
-
     if (waveIndex >= 7)
     {
         int total = computeEnemyCount(waveIndex);

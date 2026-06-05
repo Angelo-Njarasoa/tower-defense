@@ -12,31 +12,14 @@ class Game;
 class Wave;
 class Enemy;
 
-// ============================================================
-//  WaveController
-//
-//  Sub-controller dedicated to enemy wave management:
-//   - Wave preparation and launch
-//   - Inter-wave countdown timer
-//   - Progressive enemy spawning
-//   - Wave-end signaling to GameController via callback
-//
-//  Uses EnemyFactory (Factory Pattern) to instantiate enemies
-//  without scattered if/else chains, and notifies observers
-//  through GameController (Observer Pattern).
-// ============================================================
-class WaveController {
+//  Uses EnemyFactory (Factory Pattern) to instantiate enemies without scattered if/else chains, and notifies observers
 public:
-    // ----------------------------------------------------------
+
     //  Callback type fired on wave events
     //  (GameController subscribes to it to notify its observers)
-    // ----------------------------------------------------------
     using EventCallback = std::function<void(GameEvent, int)>;
 
-    // ----------------------------------------------------------
     //  Construction / Destruction
-    // ----------------------------------------------------------
-
     /**
      * @brief Constructor
      * @param game           Shared pointer to the game model
@@ -54,30 +37,21 @@ public:
     WaveController(const WaveController&)            = delete;
     WaveController& operator=(const WaveController&) = delete;
 
-    // ----------------------------------------------------------
     //  Update loop
-    // ----------------------------------------------------------
-
     /**
      * @brief Updates the wave system
      * @param deltaTime  Time elapsed since the last frame (seconds)
      */
     void update(float deltaTime);
 
-    // ----------------------------------------------------------
     //  Manual control
-    // ----------------------------------------------------------
-
     /**
      * @brief Forces the next wave to start immediately
      *        (only works during the preparation phase)
      */
     void forceStartNextWave();
 
-    // ----------------------------------------------------------
     //  Read-only accessors
-    // ----------------------------------------------------------
-
     /** @return Current wave number (1-based) */
     int   getCurrentWaveNumber()  const;
 
@@ -94,34 +68,26 @@ public:
     bool  allWavesCleared()       const;
 
 private:
-    // ----------------------------------------------------------
+
     //  Wave data
-    // ----------------------------------------------------------
     std::shared_ptr<Game> m_game;
     int                   m_totalWaves;
-    int                   m_currentWaveIndex = 0;    ///< 0-based index
-    float                 m_prepDuration;             ///< Fixed preparation duration
-    float                 m_prepTimer        = 0.f;   ///< Remaining prep time
+    int                   m_currentWaveIndex = 0;   
+    float                 m_prepDuration;            
+    float                 m_prepTimer        = 0.f;  
     bool                  m_waveInProgress   = false;
     bool                  m_allCleared       = false;
 
-    // ----------------------------------------------------------
     //  Progressive spawning
-    // ----------------------------------------------------------
-    float m_spawnInterval  = 1.0f;  ///< Time between two spawns (seconds)
-    float m_spawnTimer     = 0.f;   ///< Current spawn timer accumulator
-    int   m_enemiesToSpawn = 0;     ///< Enemies left to spawn in this wave
-    int   m_spawnedCount   = 0;     ///< Enemies already spawned in this wave
+    float m_spawnInterval  = 1.0f; 
+    float m_spawnTimer     = 0.f;  
+    int   m_enemiesToSpawn = 0;    
+    int   m_spawnedCount   = 0;     
 
-    // ----------------------------------------------------------
     //  Callback to GameController
-    // ----------------------------------------------------------
     EventCallback m_eventCallback;
 
-    // ----------------------------------------------------------
     //  Private methods
-    // ----------------------------------------------------------
-
     /**
      * @brief Starts the wave at the given index
      * @param waveIndex  0-based wave index
