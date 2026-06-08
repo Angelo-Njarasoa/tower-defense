@@ -7,22 +7,22 @@ Enemy::Enemy(EnemyType type, std::vector<sf::Vector2f> path)
     : m_type(type), m_path(path), m_pathIndex(0), m_spawnDelay(0.f)
 {
     switch (type) {
-        case EnemyType::GOBLIN: // Fast but fragile
-            m_hpMax  = 100;
-            m_speed  = 100.f;
+        case EnemyType::JEEP: // Fast scout vehicle, low HP
+            m_hpMax  = 80;
+            m_speed  = 110.f;
             m_reward = 10;
             m_damage = 10;
             break;
-        case EnemyType::TROLL: // Slow and tanky
-            m_hpMax  = 250;
-            m_speed  = 60.f;
-            m_reward = 25;
-            m_damage = 25;
+        case EnemyType::TANK: // Heavy armored vehicle, slow
+            m_hpMax  = 350;
+            m_speed  = 55.f;
+            m_reward = 30;
+            m_damage = 30;
             break;
-        case EnemyType::BOSS: // Very slow, very dangerous
-            m_hpMax  = 800;
-            m_speed  = 40.f;
-            m_reward = 100;
+        case EnemyType::PLANE: // Aircraft, fast but fragile compared to tank
+            m_hpMax  = 600;
+            m_speed  = 45.f;
+            m_reward = 80;
             m_damage = 50;
             break;
     }

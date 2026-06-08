@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 
-enum class EnemyType { GOBLIN, TROLL, BOSS };
+enum class EnemyType { JEEP, TANK, PLANE };
 
 class Enemy : public Entity
 {

@@ -5,7 +5,7 @@
 #include "../../include/model/entity.hpp"
 #include "../../include/model/Enemy.hpp"
 
-enum class TowerType { ARCHER, MAGE, CANNON };
+enum class TowerType { GATLING, CANNON, ROCKET };
 
 class Tower : public Entity {
 private:

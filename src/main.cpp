@@ -22,25 +22,30 @@ int main()
     const std::vector<sf::Vector2f>& waypoints = map.getWaypoints();
 
     // --- Towers ---
-    // Place towers on grass tiles close to the path
-    auto archer = std::make_shared<Tower>(TowerType::ARCHER, sf::Vector2i(2, 1));
-    archer->loadTexture("assets/tower_rocket.png");
+    auto gatling = std::make_shared<Tower>(TowerType::GATLING, sf::Vector2i(2, 1));
+    gatling->loadTexture("assets/tower_gatling.png");
 
     auto cannon = std::make_shared<Tower>(TowerType::CANNON, sf::Vector2i(5, 5));
-    cannon->loadTexture("assets/tower_rocket.png");
+    cannon->loadTexture("assets/tower_cannon.png");
 
-    std::vector<std::shared_ptr<Tower>> towers = { archer, cannon };
+    auto rocket = std::make_shared<Tower>(TowerType::ROCKET, sf::Vector2i(9, 3));
+    rocket->loadTexture("assets/tower_rocket.png");
+
+    std::vector<std::shared_ptr<Tower>> towers = { gatling, cannon, rocket };
 
     // --- Enemies ---
-    // Two enemies follow the same path; the boss starts slightly behind
-    auto goblin = std::make_shared<Enemy>(EnemyType::GOBLIN, waypoints);
-    goblin->loadTexture("assets/enemy_goblin.png");
+    auto jeep = std::make_shared<Enemy>(EnemyType::JEEP, waypoints);
+    jeep->loadTexture("assets/enemy_jeep.png");
 
-    auto boss = std::make_shared<Enemy>(EnemyType::BOSS, waypoints);
-    boss->loadTexture("assets/enemy_boss.png");
-    boss->setSpawnDelay(4.0f); // Boss starts 4 seconds after the goblin
+    auto tank = std::make_shared<Enemy>(EnemyType::TANK, waypoints);
+    tank->loadTexture("assets/enemy_tank.png");
+    tank->setSpawnDelay(3.0f);
 
-    std::vector<std::shared_ptr<Enemy>> enemies = { goblin, boss };
+    auto plane = std::make_shared<Enemy>(EnemyType::PLANE, waypoints);
+    plane->loadTexture("assets/enemy_plane.png");
+    plane->setSpawnDelay(6.0f);
+
+    std::vector<std::shared_ptr<Enemy>> enemies = { jeep, tank, plane };
 
     sf::Clock clock;
 
