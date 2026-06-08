@@ -4,7 +4,7 @@
 
 // Sets stats based on enemy type; hp starts at full health
 Enemy::Enemy(EnemyType type, std::vector<sf::Vector2f> path)
-    : m_type(type), m_path(path), m_pathIndex(0)
+    : m_type(type), m_path(path), m_pathIndex(0), m_spawnDelay(0.f)
 {
     switch (type) {
         case EnemyType::GOBLIN: // Fast but fragile
@@ -48,6 +48,12 @@ bool Enemy::loadTexture(const std::string& path) {
 
 // Move enemy toward the next waypoint each frame
 void Enemy::update(float deltaTime) {
+    // Wait until spawn delay expires before moving
+    if (m_spawnDelay > 0.f) {
+        m_spawnDelay -= deltaTime;
+        return;
+    }
+
     if (m_pathIndex >= (int)m_path.size()) return;
 
     sf::Vector2f target    = m_path[m_pathIndex];
@@ -61,6 +67,9 @@ void Enemy::update(float deltaTime) {
         sf::Vector2f normalized = direction / distance;
         m_position += normalized * m_speed * deltaTime;
         m_sprite.setPosition(m_position);
+        // Rotate sprite to face movement direction (atan2 gives angle of direction vector)
+        float angle = std::atan2(direction.y, direction.x) * 180.f / M_PI;
+        m_sprite.setRotation(angle);
     }
 }
 
@@ -75,3 +84,5 @@ bool         Enemy::isDead()      const { return m_hpCurrent <= 0; }
 int          Enemy::getReward()   const { return m_reward; }
 EnemyType    Enemy::getType()     const { return m_type; }
 sf::Vector2f Enemy::getPosition() const { return m_position; }
+
+void Enemy::setSpawnDelay(float seconds) { m_spawnDelay = seconds; }
