@@ -1,3 +1,4 @@
+
 #include "../../include/model/Tower.hpp"
 #include <cmath>
 #include <iostream>
@@ -84,8 +85,8 @@ void Tower::attack(std::vector<std::shared_ptr<Enemy>>& enemies) {
         sf::Vector2f diff = enemy->getPosition() - center;
         float dist = std::sqrt(diff.x * diff.x + diff.y * diff.y);
         if (dist <= m_range) {
-            // Rotate tower sprite to face the target
-            float angle = std::atan2(diff.y, diff.x) * 180.f / M_PI;
+            // +90 offset because the sprite faces up by default (0deg = up, not right)
+            float angle = std::atan2(diff.y, diff.x) * 180.f / M_PI + 90.f;
             m_sprite.setRotation(angle);
             enemy->takeDamage(m_damage);
             m_lastTargetPos = enemy->getPosition(); // Store target position for visual
