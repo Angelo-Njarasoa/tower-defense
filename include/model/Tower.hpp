@@ -15,6 +15,8 @@ private:
     float        m_range;
     float        m_fireRate;
     float        m_fireCooldown;
+    float        m_flashTimer;      // Time remaining for the attack line visual
+    sf::Vector2f m_lastTargetPos;   // Position of the last hit enemy
     int          m_cost;
     int          m_upgradeLevel;
     int          m_upgradeCost;
