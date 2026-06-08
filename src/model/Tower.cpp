@@ -4,7 +4,8 @@
 
 // Initialize tower stats based on its type and place it on the grid
 Tower::Tower(TowerType type, sf::Vector2i gridPos)
-    : m_type(type), m_gridPos(gridPos), m_upgradeLevel(0), m_fireCooldown(0.f)
+    : m_type(type), m_gridPos(gridPos), m_upgradeLevel(0), m_fireCooldown(0.f),
+      m_flashTimer(0.f), m_lastTargetPos(0.f, 0.f)
 {
     // Each tower type has different damage, range, fire rate and cost
     switch (type) {
@@ -51,14 +52,25 @@ bool Tower::loadTexture(const std::string& path) {
     return true;
 }
 
-// Decrease fire cooldown each frame
+// Decrease fire cooldown and flash timer each frame
 void Tower::update(float deltaTime) {
     if (m_fireCooldown > 0.f)
         m_fireCooldown -= deltaTime;
+    if (m_flashTimer > 0.f)
+        m_flashTimer -= deltaTime;
 }
 
 void Tower::render(sf::RenderWindow& window) const {
     window.draw(m_sprite);
+    // Draw a yellow line toward the last target for 0.12s after each shot
+    if (m_flashTimer > 0.f) {
+        sf::Vector2f center = m_position + sf::Vector2f(32.f, 32.f);
+        sf::Vertex line[] = {
+            sf::Vertex(center,           sf::Color::Yellow),
+            sf::Vertex(m_lastTargetPos,  sf::Color::Yellow)
+        };
+        window.draw(line, 2, sf::Lines);
+    }
 }
 
 // Attack the first living enemy within range, then enter cooldown
@@ -72,7 +84,9 @@ void Tower::attack(std::vector<std::shared_ptr<Enemy>>& enemies) {
         float dist = std::sqrt(diff.x * diff.x + diff.y * diff.y);
         if (dist <= m_range) {
             enemy->takeDamage(m_damage);
-            m_fireCooldown = 1.f / m_fireRate; // Reset cooldown after shot
+            m_lastTargetPos = enemy->getPosition(); // Store target position for visual
+            m_flashTimer    = 0.12f;                // Activate attack line for 0.12s
+            m_fireCooldown  = 1.f / m_fireRate;
             break; // One target per shot
         }
     }
