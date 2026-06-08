@@ -19,4 +19,5 @@ public:
     bool load(const std::string& grassPath, const std::string& pathPath, const std::string& basePath);
     void draw(sf::RenderWindow& window);
     const std::vector<sf::Vector2f>& getWaypoints() const;
+    bool isGrass(int col, int row) const;
 };

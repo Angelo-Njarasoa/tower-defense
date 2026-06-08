@@ -62,3 +62,9 @@ void Map::draw(sf::RenderWindow& window) {
 const std::vector<sf::Vector2f>& Map::getWaypoints() const {
     return m_waypoints;
 }
+
+// Returns true if the tile at (col, row) is grass and can receive a tower
+bool Map::isGrass(int col, int row) const {
+    if (col < 0 || col >= MAP_COLS || row < 0 || row >= MAP_ROWS) return false;
+    return GRID[row][col] == 0;
+}
