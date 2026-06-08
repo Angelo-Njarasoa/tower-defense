@@ -1,30 +1,86 @@
 #include <SFML/Graphics.hpp>
+#include <vector>
+#include <memory>
+
+#include "../include/model/Map.hpp"
+#include "../include/model/Tower.hpp"
+#include "../include/model/Enemy.hpp"
 
 int main()
 {
-    // create the window
-    sf::RenderWindow window(sf::VideoMode({800, 600}), "My window");
+    // Window size matches the tilemap: 12 cols x 9 rows x 64px = 768x576
+    sf::RenderWindow window(sf::VideoMode(768, 576), "Tower Defense - Visual Test");
+    window.setFramerateLimit(60);
 
-    // run the program as long as the window is open
+    // --- Map ---
+    Map map;
+    if (!map.load("assets/grass.png", "assets/path.png", "assets/tower_base.png"))
+        return -1;
+
+    // Retrieve waypoints computed by the map (enemies follow this path)
+    const std::vector<sf::Vector2f>& waypoints = map.getWaypoints();
+
+    // --- Towers ---
+    // Place towers on grass tiles close to the path
+    auto archer = std::make_shared<Tower>(TowerType::ARCHER, sf::Vector2i(2, 1));
+    archer->loadTexture("assets/tower_rocket.png");
+
+    auto cannon = std::make_shared<Tower>(TowerType::CANNON, sf::Vector2i(5, 5));
+    cannon->loadTexture("assets/tower_rocket.png");
+
+    std::vector<std::shared_ptr<Tower>> towers = { archer, cannon };
+
+    // --- Enemies ---
+    // Two enemies follow the same path; the boss starts slightly behind
+    auto goblin = std::make_shared<Enemy>(EnemyType::GOBLIN, waypoints);
+    goblin->loadTexture("assets/enemy_goblin.png");
+
+    auto boss = std::make_shared<Enemy>(EnemyType::BOSS, waypoints);
+    boss->loadTexture("assets/enemy_boss.png");
+
+    std::vector<std::shared_ptr<Enemy>> enemies = { goblin, boss };
+
+    sf::Clock clock;
+
+    // --- Main loop ---
     while (window.isOpen())
     {
-        // check all the window's events that were triggered since the last iteration of the loop
-        while (const std::optional event = window.pollEvent())
+        // Handle window and keyboard events
+        sf::Event event;
+        while (window.pollEvent(event))
         {
-            // "close requested" event: we close the window
-            if (event->is<sf::Event::Closed>())
+            if (event.type == sf::Event::Closed)
+                window.close();
+            if (event.type == sf::Event::KeyPressed &&
+                event.key.code == sf::Keyboard::Escape)
                 window.close();
         }
 
-        // clear the window with black color
-        window.clear(sf::Color::Black);
+        float dt = clock.restart().asSeconds();
 
-        // draw everything here...
-        // window.draw(...);
+        // Update enemies (movement along path)
+        for (auto& enemy : enemies)
+            enemy->update(dt);
 
-        // end the current frame
+        // Update towers (cooldown) and trigger attacks
+        for (auto& tower : towers)
+        {
+            tower->update(dt);
+            tower->attack(enemies);
+        }
+
+        // --- Render ---
+        window.clear();
+        map.draw(window);
+
+        for (auto& tower : towers)
+            tower->render(window);
+
+        for (auto& enemy : enemies)
+            enemy->render(window);
+
         window.display();
-
-        
     }
+
+    return 0;
 }

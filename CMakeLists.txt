@@ -19,3 +19,6 @@ add_executable(TowerDefense ${SOURCES})
 target_include_directories(TowerDefense PRIVATE include)
 
 target_link_libraries(TowerDefense sfml-graphics sfml-window sfml-system)
+
+# Copy assets folder to build directory so the executable can find textures
+file(COPY ${CMAKE_SOURCE_DIR}/assets DESTINATION ${CMAKE_BINARY_DIR})
