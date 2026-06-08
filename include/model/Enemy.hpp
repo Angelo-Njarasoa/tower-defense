@@ -14,8 +14,9 @@ private:
     float                      m_speed;
     int                        m_reward;
     int                        m_damage;
-    std::vector<sf::Vector2f>  m_path;       // Waypoints the enemy follows
-    int                        m_pathIndex;  // Current waypoint index
+    std::vector<sf::Vector2f>  m_path;        // Waypoints the enemy follows
+    int                        m_pathIndex;   // Current waypoint index
+    float                      m_spawnDelay;  // Seconds before the enemy starts moving
 
 public:
     Enemy(EnemyType type, std::vector<sf::Vector2f> path);
@@ -24,6 +25,8 @@ public:
 
     void      update(float deltaTime) override;
     void      render(sf::RenderWindow& window) const override;
+
+    void      setSpawnDelay(float seconds);
 
     bool      hasReachedBase() const;
     bool      isDead()         const;
