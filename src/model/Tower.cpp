@@ -46,9 +46,10 @@ bool Tower::loadTexture(const std::string& path) {
     }
     m_sprite.setTexture(m_texture);
     auto sz = m_texture.getSize();
-    // Scale to 48x48 and center inside the 64x64 tile (8px margin on each side)
+    // Scale to 48x48, center origin so rotation pivots around the middle of the sprite
     m_sprite.setScale(48.f / sz.x, 48.f / sz.y);
-    m_sprite.setPosition(m_position.x + 8.f, m_position.y + 8.f);
+    m_sprite.setOrigin(sz.x / 2.f, sz.y / 2.f);
+    m_sprite.setPosition(m_position.x + 32.f, m_position.y + 32.f);
     return true;
 }
 
@@ -83,6 +84,9 @@ void Tower::attack(std::vector<std::shared_ptr<Enemy>>& enemies) {
         sf::Vector2f diff = enemy->getPosition() - center;
         float dist = std::sqrt(diff.x * diff.x + diff.y * diff.y);
         if (dist <= m_range) {
+            // Rotate tower sprite to face the target
+            float angle = std::atan2(diff.y, diff.x) * 180.f / M_PI;
+            m_sprite.setRotation(angle);
             enemy->takeDamage(m_damage);
             m_lastTargetPos = enemy->getPosition(); // Store target position for visual
             m_flashTimer    = 0.12f;                // Activate attack line for 0.12s
