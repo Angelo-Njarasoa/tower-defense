@@ -1,0 +1,19 @@
+{
+    "configurations": [
+        {
+            "name": "WSL",
+            "includePath": [
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/src",
+                "/usr/include",
+                "/usr/include/SFML",
+                "/usr/local/include"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/g++",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-gcc-x64"
+        }
+    ],
+    "version": 4
+}
