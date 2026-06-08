@@ -38,6 +38,7 @@ int main()
 
     auto boss = std::make_shared<Enemy>(EnemyType::BOSS, waypoints);
     boss->loadTexture("assets/enemy_boss.png");
+    boss->setSpawnDelay(4.0f); // Boss starts 4 seconds after the goblin
 
     std::vector<std::shared_ptr<Enemy>> enemies = { goblin, boss };
 
