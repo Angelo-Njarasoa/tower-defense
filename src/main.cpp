@@ -1,6 +1,7 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 #include <memory>
+#include <algorithm>
 
 #include "../include/model/Map.hpp"
 #include "../include/model/Tower.hpp"
@@ -61,6 +62,13 @@ int main()
         // Update enemies (movement along path)
         for (auto& enemy : enemies)
             enemy->update(dt);
+
+        // Remove enemies that reached the base or died
+        enemies.erase(
+            std::remove_if(enemies.begin(), enemies.end(),
+                [](const std::shared_ptr<Enemy>& e){ return e->hasReachedBase() || e->isDead(); }),
+            enemies.end()
+        );
 
         // Update towers (cooldown) and trigger attacks
         for (auto& tower : towers)
