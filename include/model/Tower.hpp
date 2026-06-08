@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <memory>
+#include <string>
 #include "../../include/model/entity.hpp"
 #include "../../include/model/Enemy.hpp"
 
@@ -8,6 +9,7 @@ enum class TowerType { ARCHER, MAGE, CANNON };
 
 class Tower : public Entity {
 private:
+    sf::Texture  m_texture;
     TowerType    m_type;
     int          m_damage;
     float        m_range;
@@ -21,6 +23,8 @@ private:
 public:
     Tower(TowerType type, sf::Vector2i gridPos);
 
+    bool loadTexture(const std::string& path);
+
     void update(float deltaTime) override;
     void render(sf::RenderWindow& window) const override;
 
@@ -28,9 +32,10 @@ public:
     void upgrade();
     bool canUpgrade() const;
 
-    TowerType    getType() const;
-    int          getCost() const;
+    TowerType    getType()        const;
+    int          getCost()        const;
     int          getUpgradeCost() const;
-    float        getRange() const;
-    sf::Vector2i getGridPosition() const;
+    float        getRange()       const;
+    sf::Vector2f getPosition()    const;
+    sf::Vector2i getGridPosition()const;
 };
