@@ -1,10 +1,9 @@
 #pragma once
 #include "../../include/model/entity.hpp"
+#include "../../include/model/Types.hpp"
 #include <SFML/Graphics.hpp>
 #include <vector>
 #include <string>
-
-enum class EnemyType { GOBLIN, TROLL, BOSS };
 
 class Enemy : public Entity
 {

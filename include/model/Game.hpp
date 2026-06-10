@@ -1,28 +1,22 @@
-#ifndef GAME_HPP
-#define GAME_HPP
+#pragma once
+#include <vector>
+#include <memory>
+#include <set>
+#include <utility>
+#include "Map.hpp"
+#include "Tower.hpp"
+#include "Enemy.hpp"
 
-#include <SFML/Graphics.hpp>
-#include "model/Map.hpp"
-
-class Game
-{
-private:
-    sf::RenderWindow window;
-    sf::Event event;
-
-    bool isRunning;
-
-    Map map;
-
-    void processEvents();
-    void update();
-    void render();
-
+class Game {
 public:
-    Game();
-    ~Game();
+    Map map;
+    std::vector<std::shared_ptr<Tower>> towers;
+    std::vector<std::shared_ptr<Enemy>> enemies;
+    std::set<std::pair<int,int>>        occupiedTiles;
+    int gold        = 150;
+    int lives       = 10;
+    int score       = 0;
+    int currentWave = 0;
 
-    void run();
+    bool load();
 };
-
-#endif

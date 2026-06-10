@@ -3,9 +3,8 @@
 #include <memory>
 #include <string>
 #include "../../include/model/entity.hpp"
+#include "../../include/model/Types.hpp"
 #include "../../include/model/Enemy.hpp"
-
-enum class TowerType { ARCHER, MAGE, CANNON };
 
 class Tower : public Entity {
 private:

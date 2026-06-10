@@ -10,23 +10,23 @@ Tower::Tower(TowerType type, sf::Vector2i gridPos)
 {
     // Each tower type has different damage, range, fire rate and cost
     switch (type) {
-        case TowerType::ARCHER:
-            m_damage      = 15;     // Low damage, high fire rate
-            m_range       = 150.f;
-            m_fireRate    = 1.5f;   // Shots per second
+        case TowerType::GATLING: // Rapid fire, low damage per shot
+            m_damage      = 10;
+            m_range       = 160.f;
+            m_fireRate    = 3.0f;   // 3 shots per second
             m_cost        = 50;
             m_upgradeCost = 30;
             break;
-        case TowerType::MAGE:
-            m_damage      = 30;     // Medium damage and range
-            m_range       = 120.f;
-            m_fireRate    = 0.8f;
+        case TowerType::CANNON: // Medium damage, medium range
+            m_damage      = 40;
+            m_range       = 130.f;
+            m_fireRate    = 0.9f;
             m_cost        = 80;
             m_upgradeCost = 50;
             break;
-        case TowerType::CANNON:
-            m_damage      = 60;     // High damage, slow fire rate
-            m_range       = 100.f;
+        case TowerType::ROCKET: // Heavy damage, slow fire rate
+            m_damage      = 80;
+            m_range       = 110.f;
             m_fireRate    = 0.4f;
             m_cost        = 120;
             m_upgradeCost = 80;

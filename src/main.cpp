@@ -1,95 +1,43 @@
 #include <SFML/Graphics.hpp>
-#include <vector>
 #include <memory>
-#include <algorithm>
+#include "model/Game.hpp"
+#include "view/GameView.hpp"
+#include "view/SoundManager.hpp"
+#include "controller/GameController.hpp"
 
-#include "../include/model/Map.hpp"
-#include "../include/model/Tower.hpp"
-#include "../include/model/Enemy.hpp"
-
-int main()
-{
-    // Window size matches the tilemap: 12 cols x 9 rows x 64px = 768x576
-    sf::RenderWindow window(sf::VideoMode(768, 576), "Tower Defense - Visual Test");
+int main() {
+    // Fullscreen at desktop resolution; a scaled view maps the logical 768x620 canvas
+    sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
+    sf::RenderWindow window(desktop, "Tower Defense", sf::Style::Fullscreen);
     window.setFramerateLimit(60);
 
-    // --- Map ---
-    Map map;
-    if (!map.load("assets/grass.png", "assets/path.png", "assets/tower_base.png"))
-        return -1;
+    // Scale the logical canvas (768x620) to fill the screen while keeping aspect ratio
+    sf::View scaledView(sf::FloatRect(0.f, 0.f, 768.f, 620.f));
+    float scaleX = desktop.width  / 768.f;
+    float scaleY = desktop.height / 620.f;
+    float scale  = std::min(scaleX, scaleY);
+    float vpW    = (768.f * scale) / desktop.width;
+    float vpH    = (620.f * scale) / desktop.height;
+    scaledView.setViewport(sf::FloatRect((1.f - vpW) / 2.f, (1.f - vpH) / 2.f, vpW, vpH));
+    window.setView(scaledView);
 
-    // Retrieve waypoints computed by the map (enemies follow this path)
-    const std::vector<sf::Vector2f>& waypoints = map.getWaypoints();
+    auto game = std::make_shared<Game>();
+    if (!game->load()) return -1;
 
-    // --- Towers ---
-    // Place towers on grass tiles close to the path
-    auto archer = std::make_shared<Tower>(TowerType::ARCHER, sf::Vector2i(2, 1));
-    archer->loadTexture("assets/tower_rocket.png");
-
-    auto cannon = std::make_shared<Tower>(TowerType::CANNON, sf::Vector2i(5, 5));
-    cannon->loadTexture("assets/tower_rocket.png");
-
-    std::vector<std::shared_ptr<Tower>> towers = { archer, cannon };
-
-    // --- Enemies ---
-    // Two enemies follow the same path; the boss starts slightly behind
-    auto goblin = std::make_shared<Enemy>(EnemyType::GOBLIN, waypoints);
-    goblin->loadTexture("assets/enemy_goblin.png");
-
-    auto boss = std::make_shared<Enemy>(EnemyType::BOSS, waypoints);
-    boss->loadTexture("assets/enemy_boss.png");
-    boss->setSpawnDelay(4.0f); // Boss starts 4 seconds after the goblin
-
-    std::vector<std::shared_ptr<Enemy>> enemies = { goblin, boss };
+    auto gameView  = std::make_shared<GameView>(window, game);
+    auto sound     = std::make_shared<SoundManager>();
+    GameController controller(window, game, gameView);
+    controller.subscribe(sound);
 
     sf::Clock clock;
-
-    // --- Main loop ---
-    while (window.isOpen())
-    {
-        // Handle window and keyboard events
+    while (controller.isRunning()) {
         sf::Event event;
         while (window.pollEvent(event))
-        {
-            if (event.type == sf::Event::Closed)
-                window.close();
-            if (event.type == sf::Event::KeyPressed &&
-                event.key.code == sf::Keyboard::Escape)
-                window.close();
-        }
+            controller.handleEvent(event);
 
         float dt = clock.restart().asSeconds();
-
-        // Update enemies (movement along path)
-        for (auto& enemy : enemies)
-            enemy->update(dt);
-
-        // Remove enemies that reached the base or died
-        enemies.erase(
-            std::remove_if(enemies.begin(), enemies.end(),
-                [](const std::shared_ptr<Enemy>& e){ return e->hasReachedBase() || e->isDead(); }),
-            enemies.end()
-        );
-
-        // Update towers (cooldown) and trigger attacks
-        for (auto& tower : towers)
-        {
-            tower->update(dt);
-            tower->attack(enemies);
-        }
-
-        // --- Render ---
-        window.clear();
-        map.draw(window);
-
-        for (auto& tower : towers)
-            tower->render(window);
-
-        for (auto& enemy : enemies)
-            enemy->render(window);
-
-        window.display();
+        controller.update(dt);
+        controller.render();
     }
-
     return 0;
 }

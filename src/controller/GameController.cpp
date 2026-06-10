@@ -1,10 +1,10 @@
 #include "../../include/controller/GameController.hpp"
 #include "../../include/controller/WaveController.hpp"
-
+#include "../../include/view/GameView.hpp"
+#include "../../include/model/Game.hpp"
 #include <algorithm>
 #include <iostream>
 
-//  Construction
 GameController::GameController(sf::RenderWindow&         window,
                                std::shared_ptr<Game>     game,
                                std::shared_ptr<GameView> gameView)
@@ -12,29 +12,23 @@ GameController::GameController(sf::RenderWindow&         window,
     , m_game(std::move(game))
     , m_gameView(std::move(gameView))
 {
-    // Create the WaveController with a lambda that forwards wave events
     m_waveController = std::make_unique<WaveController>(
         m_game,
-        10,     // Total number of waves
-        10.0f,  // Preparation timer: 10 seconds
-        [this](GameEvent event, int value) {
-            notifyObservers(event, value);
-        }
+        10,     // 10 waves total
+        10.0f,  // 10-second prep timer between waves
+        [this](GameEvent event, int value) { notifyObservers(event, value); }
     );
 
+    // Register GameView as an observer so it reacts to GAME_OVER / GAME_WIN
     subscribe(m_gameView);
 }
 
-//  Observer Pattern
-void GameController::subscribe(std::shared_ptr<IObserver> observer)
-{
-    // Store a weak_ptr to avoid extending the lifetime of observers: the controller does not own the view.
+// ISubject
+void GameController::subscribe(std::shared_ptr<IObserver> observer) {
     m_observers.emplace_back(observer);
 }
 
-void GameController::unsubscribe(std::shared_ptr<IObserver> observer)
-{
-    // Remove the matching weak_ptr (expired or same pointer)
+void GameController::unsubscribe(std::shared_ptr<IObserver> observer) {
     m_observers.erase(
         std::remove_if(m_observers.begin(), m_observers.end(),
             [&observer](const std::weak_ptr<IObserver>& wp) {
@@ -45,9 +39,7 @@ void GameController::unsubscribe(std::shared_ptr<IObserver> observer)
     );
 }
 
-void GameController::notifyObservers(GameEvent event, int value)
-{
-    // Iterate while cleaning up expired weak_ptr entries
+void GameController::notifyObservers(GameEvent event, int value) {
     auto it = m_observers.begin();
     while (it != m_observers.end()) {
         if (auto sp = it->lock()) {
@@ -59,145 +51,168 @@ void GameController::notifyObservers(GameEvent event, int value)
     }
 }
 
-//  Main loop
-void GameController::handleEvent(const sf::Event& event)
-{
+// Event handling
+void GameController::handleEvent(const sf::Event& event) {
     if (event.type == sf::Event::Closed) {
         m_window.close();
-        m_isRunning = false;
         return;
     }
 
-    // Keyboard
-    if (event.type == sf::Event::KeyPressed)
-    {
-        switch (event.key.code)
-        {
-            case sf::Keyboard::Escape:
-                onQuit();
-                break;
-
-            case sf::Keyboard::P:
-                onTogglePause();
-                break;
-
-            case sf::Keyboard::Space:
-                // Manually start the next wave
-                onStartWave();
-                break;
-
-            // Quick tower selection via number keys
-            case sf::Keyboard::Num1:
-                onTowerTypeSelected(TowerType::ARCHER);
-                break;
-            case sf::Keyboard::Num2:
-                onTowerTypeSelected(TowerType::MAGE);
-                break;
-            case sf::Keyboard::Num3:
-                onTowerTypeSelected(TowerType::CANNON);
-                break;
-
-            default:
-                break;
+    if (event.type == sf::Event::KeyPressed) {
+        switch (event.key.code) {
+            case sf::Keyboard::Escape: m_window.close(); break;
+            case sf::Keyboard::P:      onTogglePause();   break;
+            case sf::Keyboard::Space:  onStartWave();     break;
+            case sf::Keyboard::Num1:   onTowerTypeSelected(TowerType::GATLING); break;
+            case sf::Keyboard::Num2:   onTowerTypeSelected(TowerType::CANNON);  break;
+            case sf::Keyboard::Num3:   onTowerTypeSelected(TowerType::ROCKET);  break;
+            default: break;
         }
     }
 
-    //  Mouse (left click)
-    if (event.type == sf::Event::MouseButtonPressed &&
-        event.mouseButton.button == sf::Mouse::Left)
-    {
+    if (event.type == sf::Event::MouseButtonPressed) {
         sf::Vector2i mousePos(event.mouseButton.x, event.mouseButton.y);
 
-        onTowerUpgrade(mousePos);
-
-        onTowerPlacement(mousePos, m_selectedTowerType);
+        if (event.mouseButton.button == sf::Mouse::Right)
+            onTowerUpgrade(mousePos);
+        else if (event.mouseButton.button == sf::Mouse::Left)
+            onTowerPlacement(mousePos, m_selectedTowerType);
     }
 }
 
-void GameController::update(float deltaTime)
-{
+void GameController::update(float deltaTime) {
     if (m_isPaused || !m_isRunning) return;
 
     m_waveController->update(deltaTime);
 
+    for (auto& e : m_game->enemies)
+        e->update(deltaTime);
+
+    for (auto& t : m_game->towers) {
+        t->update(deltaTime);
+        t->attack(m_game->enemies);
+    }
+
     checkEnemyDeaths();
     checkBaseReached();
+
+    // Remove enemies that are done (dead or reached base)
+    m_game->enemies.erase(
+        std::remove_if(m_game->enemies.begin(), m_game->enemies.end(),
+            [](const std::shared_ptr<Enemy>& e) {
+                return e->isDead() || e->hasReachedBase();
+            }),
+        m_game->enemies.end()
+    );
+
     checkGameOver();
+
+    // Win condition: all waves spawned and no enemies left
+    if (!m_gameWin && m_waveController->allWavesCleared() && m_game->enemies.empty()) {
+        m_gameWin  = true;
+        m_isRunning = false;
+        notifyObservers(GameEvent::GAME_WIN, 0);
+    }
 }
 
-void GameController::render()
-{
-    m_window.clear();
-    m_window.display();
+void GameController::render() {
+    m_gameView->render(m_waveController.get());
 }
 
-bool GameController::isRunning() const
-{
-    return m_isRunning && m_window.isOpen();
+bool GameController::isRunning() const {
+    return m_window.isOpen();
 }
 
-//  Player actions
-void GameController::onTowerPlacement(sf::Vector2i mousePos, TowerType type)
-{
+// Tower placement: validate cell, check gold, create and register tower
+void GameController::onTowerPlacement(sf::Vector2i mousePos, TowerType type) {
     sf::Vector2i gridPos = pixelToGrid(mousePos);
+    if (gridPos.x < 0 || gridPos.y < 0) return;
+
+    if (!m_game->map.isGrass(gridPos.x, gridPos.y)) return;
+    if (m_game->occupiedTiles.count({gridPos.x, gridPos.y})) return;
 
     int cost = TowerFactory::getCost(type);
+    if (m_game->gold < cost) return;
 
-    // Create via Factory (Factory Pattern) — unique_ptr ownership transferred to model
     auto tower = TowerFactory::create(type, gridPos.x, gridPos.y);
     if (!tower) return;
+    tower->loadTexture(TowerFactory::getTexturePath(type));
 
-    // Notify all observers (view, sound, score...)
+    m_game->gold -= cost;
+    m_game->occupiedTiles.insert({gridPos.x, gridPos.y});
+    m_game->towers.push_back(std::move(tower));
+
     notifyObservers(GameEvent::TOWER_PLACED, cost);
-    notifyObservers(GameEvent::GOLD_CHANGED, 0);
+    notifyObservers(GameEvent::GOLD_CHANGED, m_game->gold);
 }
 
-void GameController::onTowerUpgrade(sf::Vector2i mousePos)
-{
+// Tower upgrade: find tower at grid cell and upgrade if affordable
+void GameController::onTowerUpgrade(sf::Vector2i mousePos) {
     sf::Vector2i gridPos = pixelToGrid(mousePos);
+    if (gridPos.x < 0 || gridPos.y < 0) return;
 
-    notifyObservers(GameEvent::TOWER_UPGRADED, 0);
-    notifyObservers(GameEvent::GOLD_CHANGED,   0 );
+    for (auto& tower : m_game->towers) {
+        if (tower->getGridPosition() != gridPos) continue;
+        if (!tower->canUpgrade()) return;
+
+        int cost = tower->getUpgradeCost();
+        if (m_game->gold < cost) return;
+
+        m_game->gold -= cost;
+        tower->upgrade();
+        notifyObservers(GameEvent::TOWER_UPGRADED, cost);
+        notifyObservers(GameEvent::GOLD_CHANGED, m_game->gold);
+        return;
+    }
 }
 
-void GameController::onTowerTypeSelected(TowerType type)
-{
+void GameController::onTowerTypeSelected(TowerType type) {
     m_selectedTowerType = type;
 }
 
-void GameController::onStartWave()
-{
+void GameController::onStartWave() {
     m_waveController->forceStartNextWave();
 }
 
-void GameController::onTogglePause()
-{
+void GameController::onTogglePause() {
     m_isPaused = !m_isPaused;
-    // m_gameView->showPauseOverlay(m_isPaused);
 }
 
-void GameController::onQuit()
-{
-    m_isRunning = false;
-    // m_gameView->showMainMenu();
+void GameController::onQuit() {
+    m_window.close();
 }
 
-//  Private methods
-sf::Vector2i GameController::pixelToGrid(sf::Vector2i mousePos) const
-{
-    // Cell size in pixels (must match Map / GameView settings)
-    constexpr int CELL_SIZE = 64;
-    return {mousePos.x / CELL_SIZE, mousePos.y / CELL_SIZE};
+sf::Vector2i GameController::pixelToGrid(sf::Vector2i mousePos) const {
+    // Clicks in the HUD strip (below the map) are ignored
+    if (mousePos.y >= 576) return {-1, -1};
+    return {mousePos.x / 64, mousePos.y / 64};
 }
 
-void GameController::checkEnemyDeaths()
-{
+void GameController::checkEnemyDeaths() {
+    for (auto& e : m_game->enemies) {
+        if (!e->isDead()) continue;
+        int reward = e->getReward();
+        m_game->gold  += reward;
+        m_game->score += reward * 10;
+        notifyObservers(GameEvent::ENEMY_DEAD, reward);
+        notifyObservers(GameEvent::GOLD_CHANGED, m_game->gold);
+        notifyObservers(GameEvent::SCORE_CHANGED, m_game->score);
+    }
 }
 
-void GameController::checkBaseReached()
-{
+void GameController::checkBaseReached() {
+    for (auto& e : m_game->enemies) {
+        if (!e->hasReachedBase()) continue;
+        m_game->lives -= 1;
+        if (m_game->lives < 0) m_game->lives = 0;
+        notifyObservers(GameEvent::ENEMY_REACHED_BASE, 1);
+    }
 }
 
-void GameController::checkGameOver()
-{
+void GameController::checkGameOver() {
+    if (!m_gameOver && m_game->lives <= 0) {
+        m_gameOver  = true;
+        m_isRunning = false;
+        notifyObservers(GameEvent::GAME_OVER, 0);
+    }
 }
