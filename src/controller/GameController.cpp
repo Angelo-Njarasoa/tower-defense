@@ -72,11 +72,22 @@ void GameController::handleEvent(const sf::Event& event) {
 
     if (event.type == sf::Event::MouseButtonPressed) {
         sf::Vector2i mousePos(event.mouseButton.x, event.mouseButton.y);
+        sf::Vector2f world = m_window.mapPixelToCoords(mousePos);
 
-        if (event.mouseButton.button == sf::Mouse::Right)
+        if (event.mouseButton.button == sf::Mouse::Left) {
+            // Click on HUD tower buttons (y >= 576) selects tower type
+            if (world.y >= 576.f) {
+                for (int i = 0; i < 3; ++i) {
+                    float bx = 340.f + i * 78.f;
+                    if (world.x >= bx && world.x <= bx + 68.f)
+                        onTowerTypeSelected(static_cast<TowerType>(i));
+                }
+            } else {
+                onTowerPlacement(mousePos, m_selectedTowerType);
+            }
+        } else if (event.mouseButton.button == sf::Mouse::Right) {
             onTowerUpgrade(mousePos);
-        else if (event.mouseButton.button == sf::Mouse::Left)
-            onTowerPlacement(mousePos, m_selectedTowerType);
+        }
     }
 }
 
@@ -116,7 +127,7 @@ void GameController::update(float deltaTime) {
 }
 
 void GameController::render() {
-    m_gameView->render(m_waveController.get());
+    m_gameView->render(m_waveController.get(), m_selectedTowerType);
 }
 
 bool GameController::isRunning() const {
@@ -183,9 +194,10 @@ void GameController::onQuit() {
 }
 
 sf::Vector2i GameController::pixelToGrid(sf::Vector2i mousePos) const {
-    // Clicks in the HUD strip (below the map) are ignored
-    if (mousePos.y >= 576) return {-1, -1};
-    return {mousePos.x / 64, mousePos.y / 64};
+    // Convert screen pixels to logical game coords (handles any view/fullscreen scaling)
+    sf::Vector2f world = m_window.mapPixelToCoords(mousePos);
+    if (world.y >= 576.f) return {-1, -1};
+    return {static_cast<int>(world.x / 64), static_cast<int>(world.y / 64)};
 }
 
 void GameController::checkEnemyDeaths() {

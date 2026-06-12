@@ -39,18 +39,32 @@ Tower::Tower(TowerType type, sf::Vector2i gridPos)
     m_position  = sf::Vector2f(gridPos.x * 64.f, gridPos.y * 64.f);
 }
 
-// Load the tower sprite from disk and scale it to fit the tile
-bool Tower::loadTexture(const std::string& path) {
-    if (!m_texture.loadFromFile(path)) {
-        std::cerr << "Failed to load tower texture: " << path << "\n";
+// Load the base platform (always tower_base.png) and the type-specific gun sprite
+bool Tower::loadTexture(const std::string& gunPath) {
+    // Base: fills the whole 64x64 tile, never rotates
+    if (m_texBase.loadFromFile("assets/tower_base.png")) {
+        m_spriteBase.setTexture(m_texBase);
+        auto bsz = m_texBase.getSize();
+        m_spriteBase.setScale(64.f / bsz.x, 64.f / bsz.y);
+        m_spriteBase.setPosition(m_position);
+    }
+
+    // Gun: 48x48, centered on the tile, rotates toward enemies
+    if (!m_texGun.loadFromFile(gunPath)) {
+        std::cerr << "Failed to load tower texture: " << gunPath << "\n";
         return false;
     }
-    m_sprite.setTexture(m_texture);
-    auto sz = m_texture.getSize();
-    // Scale to 48x48, center origin so rotation pivots around the middle of the sprite
+    m_sprite.setTexture(m_texGun);
+    auto sz = m_texGun.getSize();
     m_sprite.setScale(48.f / sz.x, 48.f / sz.y);
     m_sprite.setOrigin(sz.x / 2.f, sz.y / 2.f);
     m_sprite.setPosition(m_position.x + 32.f, m_position.y + 32.f);
+    // Distinct tint per type so towers are visually unambiguous
+    switch (m_type) {
+        case TowerType::GATLING: m_sprite.setColor(sf::Color(160, 255, 160)); break; // green
+        case TowerType::CANNON:  m_sprite.setColor(sf::Color(160, 200, 255)); break; // blue
+        case TowerType::ROCKET:  m_sprite.setColor(sf::Color(255, 160, 160)); break; // red
+    }
     return true;
 }
 
@@ -63,7 +77,8 @@ void Tower::update(float deltaTime) {
 }
 
 void Tower::render(sf::RenderWindow& window) const {
-    window.draw(m_sprite);
+    window.draw(m_spriteBase); // base platform first
+    window.draw(m_sprite);     // gun on top
     // Draw a yellow line toward the last target for 0.12s after each shot
     if (m_flashTimer > 0.f) {
         sf::Vector2f center = m_position + sf::Vector2f(32.f, 32.f);
